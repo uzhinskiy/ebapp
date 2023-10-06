@@ -1,0 +1,33 @@
+project: ebapp
+configVersion: 1
+deploy:
+  namespace: '[[ project ]]'
+---
+artifact: build-artifact
+from: golang:latest
+git:
+  - add: /
+    to: /app
+    excludePaths:
+    - .werffiles
+    - .helm
+    stageDependencies:
+      install:
+        - "**/*"
+shell:
+  install:
+  - | 
+    cd /app
+    GOOS=linux go build -o ./app ./src/.
+
+---
+image: app
+from: debian:buster-slim
+import:
+  - artifact: build-artifact
+    add: /app/app
+    to: /app/app
+    after: install
+docker:
+  WORKDIR: /app
+

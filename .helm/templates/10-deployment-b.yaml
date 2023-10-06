@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-second
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-second
+  revisionHistoryLimit: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-second
+    spec:
+      imagePullSecrets:
+      - name: registrysecret
+      containers:
+      - name: app
+        image: {{ .Values.werf.image.app }}
+        imagePullPolicy: IfNotPresent
+        command: ["/app/app"]
+        env:
+          - name: SERVICE
+            value: app-second
+        resources:
+          requests:
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}
+          limits:
+            memory: {{ .Values.resources.limits.memory }}

@@ -1,0 +1,41 @@
+stages:
+  - converge
+  - cleanup
+
+variables:
+  WERF_VERSION: "1.2 alpha"
+
+before_script:
+  - curl -sSL https://werf.io/install.sh | bash -s -- --ci
+  - source $(~/bin/trdl use werf ${WERF_VERSION_GLOBAL:-$WERF_VERSION})
+  - source <(werf ci-env gitlab --verbose)
+
+.base_converge:
+  stage: converge
+  script:
+    - werf converge
+        --set "global.kube_context=${WERF_KUBE_CONTEXT}"
+  tags:
+    - werf
+  except:
+    - schedules
+
+converge dev:
+  extends: .base_converge
+  environment:
+    name: dev
+  variables:
+    WERF_KUBE_CONTEXT: golf-cluster-gitlab-runner-deploy.golf-cluster
+
+cleanup:
+  stage: cleanup
+  script:
+    - docker login -u nobody -p ${WERF_IMAGES_CLEANUP_PASSWORD} ${WERF_REPO}
+    - werf cleanup
+  environment:
+    name: cleanup
+    url: http://localhost
+  tags:
+    - werf
+  only:
+    - schedules
